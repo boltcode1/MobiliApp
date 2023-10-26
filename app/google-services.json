@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "385812361791",
+    "project_id": "mobiliothon-app",
+    "storage_bucket": "mobiliothon-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:385812361791:android:24813a3339013b77717e8a",
+        "android_client_info": {
+          "package_name": "com.example.mobiliothonapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4plD5mNLO1eCjUSVNF1Y2hqrKW5-lJmM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
