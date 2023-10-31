@@ -2,6 +2,7 @@ package com.example.mobiliothonapp;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -19,6 +20,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -43,15 +45,32 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     DatabaseReference reference;
     private static final double MAX_DISTANCE = 5000.0;
     private boolean initialLocationSet = false;
+    private boolean UDPLocation = false;
+    BitmapDescriptor customMarker, pedMarker;
+
+    private BroadcastReceiver dataReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (UDPServer.CUSTOM_ACTION.equals(intent.getAction())) {
+                boolean isDataReceived = intent.getBooleanExtra("isDataReceived", false);
+
+                // Use the boolean variable as needed
+                if (isDataReceived) {
+                    UDPLocation = isDataReceived;
+                } else {
+                    UDPLocation = false;
+                }
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-
-
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        assert mapFragment != null;
         mapFragment.getMapAsync(this);
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -65,6 +84,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         } else {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
         }
+        customMarker = BitmapDescriptorFactory.fromResource(R.drawable.car_pin);
+        pedMarker = BitmapDescriptorFactory.fromResource(R.drawable.ped_pin);
     }
 
     @Override
@@ -121,39 +142,41 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onLocationChanged(Location location) {
-        double latitude = location.getLatitude();
-        double longitude = location.getLongitude();
-        currentSpeed = location.getSpeed();
-        LatLng latLng = new LatLng(latitude, longitude);
-
-        Bundle extras = getIntent().getExtras();
-        if (extras != null) {
-            username = extras.getString("username");
-        }
-
-        LocationHelper helper = new LocationHelper(
-                username,
-                location.getLongitude(),
-                location.getLatitude(),
-                location.getSpeed()
-        );
-
         database = FirebaseDatabase.getInstance();
-        reference = database.getReference("Location");
 
-        reference.child(username).setValue(helper).addOnCompleteListener(new OnCompleteListener<Void>() {
-            @Override
-            public void onComplete(@NonNull Task<Void> task) {
-                if (task.isSuccessful()) {
-                    Toast.makeText(MapsActivity.this, "Location saved!", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(MapsActivity.this, "Unable to save location", Toast.LENGTH_SHORT).show();
-                }
+            double latitude = location.getLatitude();
+            double longitude = location.getLongitude();
+            currentSpeed = location.getSpeed();
+            LatLng latLng = new LatLng(latitude, longitude);
+
+            Bundle extras = getIntent().getExtras();
+            if (extras != null) {
+                username = extras.getString("username");
             }
-        });
 
-        // Display the current latitude and longitude in a Toast message
-        Toast.makeText(this, "Latitude: " + latitude + ", Longitude: " + longitude, Toast.LENGTH_SHORT).show();
+            LocationHelper helper = new LocationHelper(
+                    username,
+                    location.getLongitude(),
+                    location.getLatitude(),
+                    location.getSpeed(),
+                    false
+            );
+
+
+            reference = database.getReference("Location");
+
+        if(UDPLocation == false) {
+            reference.child(username).setValue(helper).addOnCompleteListener(new OnCompleteListener<Void>() {
+                @Override
+                public void onComplete(@NonNull Task<Void> task) {
+                    if (task.isSuccessful()) {
+                        Toast.makeText(MapsActivity.this, "Location saved!", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(MapsActivity.this, "Unable to save location", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+        }
 
         // Update the user's marker on the map
         if (userMarker != null) {
@@ -185,6 +208,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 for (DataSnapshot userSnapshot : dataSnapshot.getChildren()) {
                     LocationHelper locationData = userSnapshot.getValue(LocationHelper.class);
                     LatLng userLatLng = new LatLng(locationData.getLatitude(), locationData.getLongitude());
+                    boolean c = locationData.isCar();
 
                     // Calculate distance between your location and the user's location
                     float[] distanceResult = new float[1];
@@ -197,10 +221,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     // Check if the user is within the specified range
                     if (distanceResult[0] <= MAX_DISTANCE) {
                         // Add markers for users within range
-                        mMap.addMarker(new MarkerOptions()
-                                .position(userLatLng)
-                                .title(locationData.getUsername())
-                                .snippet("Speed: " + locationData.getCurrentSpeed()));
+                        if(!c) {
+                            mMap.addMarker(new MarkerOptions()
+                                    .position(userLatLng)
+                                    .title(locationData.getUsername())
+                                    .snippet("Speed: " + locationData.getCurrentSpeed())
+                                    .icon(pedMarker));
+                        }else{
+                            mMap.addMarker(new MarkerOptions()
+                                    .position(userLatLng)
+                                    .title(locationData.getUsername())
+                                    .snippet("Speed: " + locationData.getCurrentSpeed())
+                                    .icon(customMarker));
+                        }
                     }
                 }
             }

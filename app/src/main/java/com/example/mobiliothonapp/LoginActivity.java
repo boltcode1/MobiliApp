@@ -49,14 +49,11 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        Intent serviceIntent = new Intent(this, UDPServer.class);
-        bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
-        startService(serviceIntent);
-
         loginUsername = findViewById(R.id.login_username);
         loginPassword = findViewById(R.id.login_password);
         loginButton = findViewById(R.id.login_button);
         signupRedirectText = findViewById(R.id.signupRedirectText);
+
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -115,6 +112,15 @@ public class LoginActivity extends AppCompatActivity {
                         intent.putExtra("email", emailFromDB);
                         intent.putExtra("username", usernameFromDB);
                         intent.putExtra("password", passwordFromDB);
+
+                        Intent serviceIntent = new Intent(LoginActivity.this, UDPServer.class);
+                        bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+                        Bundle bundle1 = new Bundle();
+                        bundle1.putString("username", usernameFromDB);
+                        serviceIntent.putExtras(bundle1);
+                        startService(serviceIntent);
+
+
                         startActivity(intent);
                     } else {
                         loginPassword.setError("Invalid Credentials");

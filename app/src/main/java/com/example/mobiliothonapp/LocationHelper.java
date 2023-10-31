@@ -4,15 +4,25 @@ public class LocationHelper {
     String username;
     private double longitude, latitude;
     private float currentSpeed;
+    private boolean car = false;
 
     public LocationHelper() {
     }
 
-    public LocationHelper(String username, double longitude, double latitude, float currentSpeed) {
+    public boolean isCar() {
+        return car;
+    }
+
+    public void setCar(boolean car) {
+        this.car = car;
+    }
+
+    public LocationHelper(String username, double longitude, double latitude, float currentSpeed, boolean car) {
         this.username = username;
         this.longitude = longitude;
         this.latitude = latitude;
         this.currentSpeed = currentSpeed;
+        this.car = car;
     }
 
     public String getUsername() {
