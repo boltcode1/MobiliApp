@@ -33,6 +33,11 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener {
 
     private GoogleMap mMap;
@@ -63,6 +68,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
     };
+
+    // Maintain data structures to track markers for other users
+    private List<Marker> otherUserMarkers = new ArrayList<>();
+    private Map<String, Marker> otherUserMarkersMap = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -117,7 +126,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void enableMyLocation() {
         try {
             mMap.setMyLocationEnabled(true);
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 10, this);
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, this);
         } catch (SecurityException e) {
             e.printStackTrace();
             Toast.makeText(this, "SecurityException: Unable to enable My Location.", Toast.LENGTH_SHORT).show();
@@ -144,28 +153,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onLocationChanged(Location location) {
         database = FirebaseDatabase.getInstance();
 
-            double latitude = location.getLatitude();
-            double longitude = location.getLongitude();
-            currentSpeed = location.getSpeed();
-            LatLng latLng = new LatLng(latitude, longitude);
+        double latitude = location.getLatitude();
+        double longitude = location.getLongitude();
+        currentSpeed = location.getSpeed();
+        LatLng latLng = new LatLng(latitude, longitude);
 
-            Bundle extras = getIntent().getExtras();
-            if (extras != null) {
-                username = extras.getString("username");
-            }
+        Bundle extras = getIntent().getExtras();
+        if (extras != null) {
+            username = extras.getString("username");
+        }
 
-            LocationHelper helper = new LocationHelper(
-                    username,
-                    location.getLongitude(),
-                    location.getLatitude(),
-                    location.getSpeed(),
-                    false
-            );
+        LocationHelper helper = new LocationHelper(
+                username,
+                location.getLongitude(),
+                location.getLatitude(),
+                location.getSpeed(),
+                false
+        );
 
+        reference = database.getReference("Location");
 
-            reference = database.getReference("Location");
-
-        if(UDPLocation == false) {
+        if (UDPLocation == false) {
             reference.child(username).setValue(helper).addOnCompleteListener(new OnCompleteListener<Void>() {
                 @Override
                 public void onComplete(@NonNull Task<Void> task) {
@@ -203,7 +211,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         reference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                mMap.clear(); // Clear existing markers on the map
+                // Clear existing markers on the map
+                mMap.clear();
 
                 for (DataSnapshot userSnapshot : dataSnapshot.getChildren()) {
                     LocationHelper locationData = userSnapshot.getValue(LocationHelper.class);
@@ -221,18 +230,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     // Check if the user is within the specified range
                     if (distanceResult[0] <= MAX_DISTANCE) {
                         // Add markers for users within range
-                        if(!c) {
+                        if (!c) {
                             mMap.addMarker(new MarkerOptions()
                                     .position(userLatLng)
                                     .title(locationData.getUsername())
                                     .snippet("Speed: " + locationData.getCurrentSpeed())
                                     .icon(pedMarker));
-                        }else{
+                        } else {
                             mMap.addMarker(new MarkerOptions()
                                     .position(userLatLng)
                                     .title(locationData.getUsername())
                                     .snippet("Speed: " + locationData.getCurrentSpeed())
                                     .icon(customMarker));
+                        }
+                    } else {
+                        // User is outside the range, you can choose to remove the marker
+                        // or keep track of it for later removal
+                        // In this example, I'm keeping track of markers to remove later
+                        if (otherUserMarkersMap.containsKey(locationData.getUsername())) {
+                            Marker otherUserMarker = otherUserMarkersMap.get(locationData.getUsername());
+                            otherUserMarkersMap.remove(locationData.getUsername());
+                            otherUserMarkers.remove(otherUserMarker);
+                            otherUserMarker.remove();
                         }
                     }
                 }
@@ -273,5 +292,4 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             enableMyLocation();
         }
     }
-
 }
