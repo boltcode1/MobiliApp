@@ -51,7 +51,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final double MAX_DISTANCE = 5000.0;
     private boolean initialLocationSet = false;
     private boolean UDPLocation = false;
-    BitmapDescriptor customMarker, pedMarker;
+    BitmapDescriptor customMarker, pedMarker, aidMarker;
 
     private BroadcastReceiver dataReceiver = new BroadcastReceiver() {
         @Override
@@ -95,6 +95,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
         customMarker = BitmapDescriptorFactory.fromResource(R.drawable.car_pin);
         pedMarker = BitmapDescriptorFactory.fromResource(R.drawable.ped_pin);
+        aidMarker = BitmapDescriptorFactory.fromResource(R.drawable.emergency);
     }
 
     @Override
@@ -168,6 +169,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 location.getLongitude(),
                 location.getLatitude(),
                 location.getSpeed(),
+                false,
                 false
         );
 
@@ -218,6 +220,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     LocationHelper locationData = userSnapshot.getValue(LocationHelper.class);
                     LatLng userLatLng = new LatLng(locationData.getLatitude(), locationData.getLongitude());
                     boolean c = locationData.isCar();
+                    boolean emergency = locationData.isEmergency();
 
                     // Calculate distance between your location and the user's location
                     float[] distanceResult = new float[1];
@@ -237,11 +240,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     .snippet("Speed: " + locationData.getCurrentSpeed())
                                     .icon(pedMarker));
                         } else {
-                            mMap.addMarker(new MarkerOptions()
-                                    .position(userLatLng)
-                                    .title(locationData.getUsername())
-                                    .snippet("Speed: " + locationData.getCurrentSpeed())
-                                    .icon(customMarker));
+                            if(emergency){
+                                mMap.addMarker(new MarkerOptions()
+                                        .position(userLatLng)
+                                        .title(locationData.getUsername())
+                                        .snippet("Speed: " + locationData.getCurrentSpeed())
+                                        .icon(aidMarker));
+                            }
+                            else {
+                                mMap.addMarker(new MarkerOptions()
+                                        .position(userLatLng)
+                                        .title(locationData.getUsername())
+                                        .snippet("Speed: " + locationData.getCurrentSpeed())
+                                        .icon(customMarker));
+                            }
                         }
                     } else {
                         // User is outside the range, you can choose to remove the marker

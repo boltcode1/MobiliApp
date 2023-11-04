@@ -5,6 +5,7 @@ public class LocationHelper {
     private double longitude, latitude;
     private float currentSpeed;
     private boolean car = false;
+    private boolean emergency = false;
 
     public LocationHelper() {
     }
@@ -17,12 +18,21 @@ public class LocationHelper {
         this.car = car;
     }
 
-    public LocationHelper(String username, double longitude, double latitude, float currentSpeed, boolean car) {
+    public LocationHelper(String username, double longitude, double latitude, float currentSpeed, boolean car, boolean emergency) {
         this.username = username;
         this.longitude = longitude;
         this.latitude = latitude;
         this.currentSpeed = currentSpeed;
         this.car = car;
+        this.emergency = emergency;
+    }
+
+    public boolean isEmergency() {
+        return emergency;
+    }
+
+    public void setEmergency(boolean emergency) {
+        this.emergency = emergency;
     }
 
     public String getUsername() {

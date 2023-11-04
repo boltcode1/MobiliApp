@@ -3,8 +3,10 @@ package com.example.mobiliothonapp;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
@@ -28,6 +30,7 @@ public class LoginActivity extends AppCompatActivity {
     TextView signupRedirectText;
     private UDPServer udpServerService;
     private boolean isServiceBound = false;
+    private boolean isEmergencyVehicle = false;
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -48,6 +51,29 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        // Emergency Vehicle Dialogue
+        AlertDialog.Builder builder = new AlertDialog.Builder(LoginActivity.this);
+        builder.setTitle("Confirmation");
+        builder.setMessage("Are you driving an emergency vehicle?");
+
+        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                isEmergencyVehicle = true;
+            }
+        });
+
+        builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                isEmergencyVehicle = false;
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
 
         loginUsername = findViewById(R.id.login_username);
         loginPassword = findViewById(R.id.login_password);
@@ -113,15 +139,17 @@ public class LoginActivity extends AppCompatActivity {
                         intent.putExtra("username", usernameFromDB);
                         intent.putExtra("password", passwordFromDB);
 
+
                         Intent serviceIntent = new Intent(LoginActivity.this, UDPServer.class);
                         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
                         Bundle bundle1 = new Bundle();
                         bundle1.putString("username", usernameFromDB);
+                        bundle1.putBoolean("emergency", isEmergencyVehicle);
                         serviceIntent.putExtras(bundle1);
                         startService(serviceIntent);
-
-
                         startActivity(intent);
+
+
                     } else {
                         loginPassword.setError("Invalid Credentials");
                         loginPassword.requestFocus();

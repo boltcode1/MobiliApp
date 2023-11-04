@@ -41,6 +41,7 @@ public class UDPServer extends Service {
     FirebaseDatabase database;
     DatabaseReference reference;
     public String username;
+    public boolean emergency;
     public static final String CUSTOM_ACTION = "com.example.mobiliothonapp.CUSTOM_ACTION";
     private boolean isDataReceived = false;
 
@@ -73,8 +74,10 @@ public class UDPServer extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null) {
             username = intent.getStringExtra("username");
+            emergency = intent.getBooleanExtra("emergency", false);
         } else {
             username = "none";
+            emergency = false;
         }
 
         // Start the UDP server in the service
@@ -145,7 +148,8 @@ public class UDPServer extends Service {
                                     longitude,
                                     latitude,
                                     currentSpeed,
-                                    true
+                                    true,
+                                    emergency
                             );
 
                             reference.child(username).setValue(helper).addOnCompleteListener(new OnCompleteListener<Void>() {
