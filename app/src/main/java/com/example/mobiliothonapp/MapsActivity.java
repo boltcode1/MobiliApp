@@ -4,13 +4,18 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Vibrator;
 import android.provider.Settings;
+import android.util.Log;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -52,6 +57,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private boolean initialLocationSet = false;
     private boolean UDPLocation = false;
     BitmapDescriptor customMarker, pedMarker, aidMarker;
+    private Vibrator vibrator;
+    private Handler handler = new Handler();
+    private AlertDialog alertDialog;
 
     private BroadcastReceiver dataReceiver = new BroadcastReceiver() {
         @Override
@@ -72,6 +80,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     // Maintain data structures to track markers for other users
     private List<Marker> otherUserMarkers = new ArrayList<>();
     private Map<String, Marker> otherUserMarkersMap = new HashMap<>();
+    private Map<String, Boolean> alerts = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -232,7 +241,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                     // Check if the user is within the specified range
                     if (distanceResult[0] <= MAX_DISTANCE) {
-                        // Add markers for users within range
                         if (!c) {
                             mMap.addMarker(new MarkerOptions()
                                     .position(userLatLng)
@@ -241,6 +249,52 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     .icon(pedMarker));
                         } else {
                             if(emergency){
+                                String curr = locationData.getUsername();
+                                Log.i("Usernames", curr);
+                                if((!alerts.containsKey(curr)) && (distanceResult[0] <= 10)){
+                                    Drawable customIcon = getResources().getDrawable(R.drawable.baseline_warning_24);
+                                    vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+
+                                    // Create an AlertDialog.Builder and set the custom icon
+                                    AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+                                    builder.setIcon(customIcon);
+
+                                    // Set the title and message for the dialog
+                                    builder.setTitle("Alert");
+                                    builder.setMessage("Emergency vehicle nearby!");
+
+                                    // Create the "OK" button
+                                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            // Handle the "OK" button click event
+                                            dialog.dismiss(); // Close the dialog
+                                            handler.removeCallbacksAndMessages(null); // Remove any delayed dismiss callbacks
+                                        }
+                                    });
+
+                                    // Create the AlertDialog
+                                    alertDialog = builder.create();
+
+                                    // Show the dialog
+                                    alertDialog.show();
+                                    vibrator.vibrate(500);
+
+                                    // Post a delayed dismissal of the dialog after 5 seconds
+                                    handler.postDelayed(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            if (alertDialog.isShowing()) {
+                                                alertDialog.dismiss();
+                                            }
+                                        }
+                                    }, 5000); // 5000 milliseconds
+                                    alerts.put(curr, true);
+                                }
+                                if(distanceResult[0] > 10){
+                                    alerts.remove(curr);
+                                }
+
                                 mMap.addMarker(new MarkerOptions()
                                         .position(userLatLng)
                                         .title(locationData.getUsername())
