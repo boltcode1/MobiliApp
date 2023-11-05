@@ -156,7 +156,7 @@ public class UDPServer extends Service {
                                 @Override
                                 public void onComplete(@NonNull Task<Void> task) {
                                     if (task.isSuccessful()) {
-                                        Toast.makeText(UDPServer.this, "UDP Location saved!", Toast.LENGTH_SHORT).show();
+//                                        Toast.makeText(UDPServer.this, "UDP Location saved!", Toast.LENGTH_SHORT).show();
                                     } else {
                                         Toast.makeText(UDPServer.this, "Unable to save location", Toast.LENGTH_SHORT).show();
                                     }
@@ -182,7 +182,7 @@ public class UDPServer extends Service {
                         isDataReceived = false;
                         broadcastIntent.putExtra("isDataReceived", isDataReceived);
                         sendBroadcast(broadcastIntent);
-                        showToast("Timeout: No data received" + username);
+//                        showToast("Timeout: No data received" + username);
                     } catch (SocketException se) {
                         if (isRunning) {
                             se.printStackTrace();
