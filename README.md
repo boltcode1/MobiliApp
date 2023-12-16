@@ -10,9 +10,9 @@
 
 <img src="https://github.com/boltcode1/MobiliApp/blob/master/s3.png" alt="project-screenshot" width="400" height="400/">
 
-<img src="https://drive.google.com/file/d/1ijymQrbUZkxpJKNsBEnCTNKsckhnU0rx/view?usp=sharing" alt="project-screenshot" width="400" height="400/">
+<img src="https://github.com/boltcode1/MobiliApp/blob/master/s2.png" alt="project-screenshot" width="400" height="400/">
 
-<img src="https://drive.google.com/file/d/1UPbasMLH_oIzbykWIyL-YhhBkTgZbvJf/view?usp=sharing" alt="project-screenshot" width="400" height="400/">
+<img src="https://github.com/boltcode1/MobiliApp/blob/master/s1.png" alt="project-screenshot" width="400" height="400/">
 
   
   
