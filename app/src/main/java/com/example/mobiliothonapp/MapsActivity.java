@@ -81,6 +81,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private List<Marker> otherUserMarkers = new ArrayList<>();
     private Map<String, Marker> otherUserMarkersMap = new HashMap<>();
     private Map<String, Boolean> alerts = new HashMap<>();
+    private List<Marker> allMarkers = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -222,9 +223,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         reference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                // Clear existing markers on the map
+                List<Marker> newMarkers = new ArrayList<>();
                 mMap.clear();
-
                 for (DataSnapshot userSnapshot : dataSnapshot.getChildren()) {
                     LocationHelper locationData = userSnapshot.getValue(LocationHelper.class);
                     LatLng userLatLng = new LatLng(locationData.getLatitude(), locationData.getLongitude());
@@ -241,12 +241,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                     // Check if the user is within the specified range
                     if (distanceResult[0] <= MAX_DISTANCE) {
+                        MarkerOptions markerOptions = new MarkerOptions()
+                                .position(userLatLng)
+                                .title(locationData.getUsername())
+                                .snippet("Speed: " + locationData.getCurrentSpeed());
+
                         if (!c) {
-                            mMap.addMarker(new MarkerOptions()
-                                    .position(userLatLng)
-                                    .title(locationData.getUsername())
-                                    .snippet("Speed: " + locationData.getCurrentSpeed())
-                                    .icon(pedMarker));
+                            markerOptions.icon(pedMarker);
                         } else {
                             if(emergency){
                                 String curr = locationData.getUsername();
@@ -260,8 +261,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     builder.setIcon(customIcon);
 
                                     // Set the title and message for the dialog
-                                    builder.setTitle("Alert");
-                                    builder.setMessage("Emergency vehicle nearby!");
+                                    builder.setTitle("Alert!");
+                                    builder.setMessage("Emergency Vehicle Nearby.");
 
                                     // Create the "OK" button
                                     builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
@@ -295,20 +296,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     alerts.remove(curr);
                                 }
 
-                                mMap.addMarker(new MarkerOptions()
-                                        .position(userLatLng)
-                                        .title(locationData.getUsername())
-                                        .snippet("Speed: " + locationData.getCurrentSpeed())
-                                        .icon(aidMarker));
+                                markerOptions.icon(aidMarker);
                             }
                             else {
-                                mMap.addMarker(new MarkerOptions()
-                                        .position(userLatLng)
-                                        .title(locationData.getUsername())
-                                        .snippet("Speed: " + locationData.getCurrentSpeed())
-                                        .icon(customMarker));
+                                markerOptions.icon(customMarker);
                             }
                         }
+                        Marker marker = mMap.addMarker(markerOptions);
+                        newMarkers.add(marker);
                     } else {
                         // User is outside the range, you can choose to remove the marker
                         // or keep track of it for later removal
@@ -321,6 +316,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         }
                     }
                 }
+                clearAndAddMarkers(newMarkers);
             }
 
             @Override
@@ -328,6 +324,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Toast.makeText(MapsActivity.this, "Failed to retrieve user locations.", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+    private void clearAndAddMarkers(List<Marker> newMarkers) {
+        // Clear existing markers from the map
+        for (Marker marker : allMarkers) {
+            marker.remove();
+        }
+        allMarkers.clear(); // Clear the list of existing markers
+
+        // Add new markers to the map and the global list
+        allMarkers.addAll(newMarkers);
     }
 
     @Override
